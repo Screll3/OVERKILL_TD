@@ -9,6 +9,8 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/Material.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Engine/World.h"
 
 AOVERKILL_TDCharacter::AOVERKILL_TDCharacter()
@@ -48,4 +50,45 @@ AOVERKILL_TDCharacter::AOVERKILL_TDCharacter()
 void AOVERKILL_TDCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+	MovementTick(DeltaSeconds);
+}
+
+void AOVERKILL_TDCharacter::SetupPlayerInputComponent(UInputComponent* InputComponent1)
+{
+	Super::SetupPlayerInputComponent(InputComponent1);
+
+	InputComponent1->BindAxis(TEXT("MoveForward"), this, &AOVERKILL_TDCharacter::InputAxisX);
+	InputComponent1->BindAxis(TEXT("MoveRight"), this, &AOVERKILL_TDCharacter::InputAxisY);
+}
+
+void AOVERKILL_TDCharacter::InputAxisX(float Value)
+{
+	AxisX = Value;
+}
+
+void AOVERKILL_TDCharacter::InputAxisY(float Value)
+{
+	AxisY = Value;
+}
+
+void AOVERKILL_TDCharacter::MovementTick(float DeltaTime)
+{
+	AddMovementInput(FVector(1.f, 0.f, 0.f), AxisX);
+	AddMovementInput(FVector(0.f, 1.f, 0.f), AxisY);
+
+	APlayerController* myController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (myController)
+	{
+		FHitResult HitRes;
+		myController->GetHitResultUnderCursorByChannel(ETraceTypeQuery::TraceTypeQuery3, false, HitRes);
+		SetActorRotation(
+			FQuat(
+				FRotator(
+					0.f,
+					UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), HitRes.Location).Yaw,
+					0.f
+				)
+			)
+		);
+	}
 }

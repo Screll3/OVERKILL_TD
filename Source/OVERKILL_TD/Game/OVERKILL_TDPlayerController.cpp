@@ -5,7 +5,7 @@
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
-#include "OVERKILL_TDCharacter.h"
+#include "Character/OVERKILL_TDCharacter.h"
 #include "Engine/World.h"
 
 AOVERKILL_TDPlayerController::AOVERKILL_TDPlayerController()
