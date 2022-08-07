@@ -92,3 +92,30 @@ void AOVERKILL_TDCharacter::MovementTick(float DeltaTime)
 		);
 	}
 }
+
+void AOVERKILL_TDCharacter::CharacterUpdate()
+{
+	float ResSpeed = 800.f;
+	switch (MovementState)
+	{
+	case EMovementState::Walk_State:
+		ResSpeed = MovementInfo.WalkSpeed;
+		break;
+	case EMovementState::Run_State:
+		ResSpeed = MovementInfo.RunSpeed;
+		break;
+	case EMovementState::Aim_State:
+		ResSpeed = MovementInfo.AimSpeed;
+		break;
+	default:
+		break;
+	}
+	
+	GetCharacterMovement()->MaxWalkSpeed = ResSpeed;
+}
+
+void AOVERKILL_TDCharacter::ChangeMovementState(EMovementState NewMovementState)
+{
+	MovementState = NewMovementState;
+	CharacterUpdate();
+}
