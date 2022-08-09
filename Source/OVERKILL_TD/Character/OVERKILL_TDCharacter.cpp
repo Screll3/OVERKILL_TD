@@ -34,8 +34,8 @@ AOVERKILL_TDCharacter::AOVERKILL_TDCharacter()
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->SetUsingAbsoluteRotation(true); // Don't want arm to rotate when character does
 	CameraBoom->TargetArmLength = 800.f;
-	CameraBoom->SetRelativeRotation(FRotator(-60.f, 0.f, 0.f));
-	CameraBoom->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level
+	CameraBoom->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+	CameraBoom->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level*/
 
 	// Create a camera...
 	TopDownCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("TopDownCamera"));
@@ -50,31 +50,54 @@ AOVERKILL_TDCharacter::AOVERKILL_TDCharacter()
 void AOVERKILL_TDCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-	MovementTick(DeltaSeconds);
+	if (MovementState != EMovementState::Run_State)
+	{
+		PlayerRotation(DeltaSeconds);
+	}
 }
 
-void AOVERKILL_TDCharacter::SetupPlayerInputComponent(UInputComponent* InputComponent1)
+void AOVERKILL_TDCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
-	Super::SetupPlayerInputComponent(InputComponent1);
+	// Set up gameplay key bindings
+	check(PlayerInputComponent);
 
-	InputComponent1->BindAxis(TEXT("MoveForward"), this, &AOVERKILL_TDCharacter::InputAxisX);
-	InputComponent1->BindAxis(TEXT("MoveRight"), this, &AOVERKILL_TDCharacter::InputAxisY);
+	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AOVERKILL_TDCharacter::MoveForward);
+	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AOVERKILL_TDCharacter::MoveRight);
+
+	//PlayerInputComponent->BindAxis("Turn Right / Left Mouse", this, &APawn::AddControllerYawInput);
+	//PlayerInputComponent->BindAxis("Look Up / Down Mouse", this, &APawn::AddControllerPitchInput);
+
 }
 
-void AOVERKILL_TDCharacter::InputAxisX(float Value)
+void AOVERKILL_TDCharacter::MoveForward(float Value)
 {
-	AxisX = Value;
+	if ((Controller != nullptr) && (Value != 0.0f))
+	{
+		// find out which way is forward
+		const FRotator Rotation = CameraBoom->GetRelativeRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		// get forward vector
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		AddMovementInput(Direction, Value);
+	}
 }
 
-void AOVERKILL_TDCharacter::InputAxisY(float Value)
+void AOVERKILL_TDCharacter::MoveRight(float Value)
 {
-	AxisY = Value;
+	if ((Controller != nullptr) && (Value != 0.0f))
+	{
+		// find out which way is right
+		const FRotator Rotation = CameraBoom->GetRelativeRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		// get right vector 
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		// add movement in that direction
+		AddMovementInput(Direction, Value);
+	}
 }
 
-void AOVERKILL_TDCharacter::MovementTick(float DeltaTime)
+void AOVERKILL_TDCharacter::PlayerRotation(float DeltaTime)
 {
-	AddMovementInput(FVector(1.f, 0.f, 0.f), AxisX);
-	AddMovementInput(FVector(0.f, 1.f, 0.f), AxisY);
 
 	APlayerController* myController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if (myController)
@@ -93,8 +116,9 @@ void AOVERKILL_TDCharacter::MovementTick(float DeltaTime)
 	}
 }
 
-void AOVERKILL_TDCharacter::CharacterUpdate()
+void AOVERKILL_TDCharacter::ChangeMovementState(EMovementState NewMovementState)
 {
+	MovementState = NewMovementState;
 	float ResSpeed = 800.f;
 	switch (MovementState)
 	{
@@ -110,12 +134,6 @@ void AOVERKILL_TDCharacter::CharacterUpdate()
 	default:
 		break;
 	}
-	
-	GetCharacterMovement()->MaxWalkSpeed = ResSpeed;
-}
 
-void AOVERKILL_TDCharacter::ChangeMovementState(EMovementState NewMovementState)
-{
-	MovementState = NewMovementState;
-	CharacterUpdate();
+	GetCharacterMovement()->MaxWalkSpeed = ResSpeed;
 }
